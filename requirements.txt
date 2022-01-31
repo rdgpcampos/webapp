@@ -1,0 +1,9 @@
+flask
+simplejson
+psycopg2-binary
+flask-restful
+Flask-SQLAlchemy
+sqlalchemy
+sqlalchemy.orm
+sqlalchemy_utils
+dataclasses
