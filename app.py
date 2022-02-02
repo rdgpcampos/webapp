@@ -42,7 +42,9 @@ class OrderRequests(Resource):
         # get id, description and unit price (at time of purchase)
         # of products from a given order_id
         try:
-            order = app_header.get_order(flask.g.session,parameters[0],header)
+            order = app_header.\
+                get_order(flask.g.session,
+                            parameters[0])
         except InvalidRequest as e:
             return {str(e) : None}, 404
         except CancelledOrder as e:
@@ -67,8 +69,11 @@ class OrderRequests(Resource):
 
         # update orders table
         try:
-            order = app_header.post_order(flask.g.session,parameters[0],
-                       parameters[1],status,header)
+            order = app_header.\
+                post_order(flask.g.session,
+                            parameters[0],
+                            parameters[1],
+                            status)
         except InvalidRequest as e:
             return {str(e) : None}, 404
 
@@ -89,11 +94,11 @@ class OrderRequests(Resource):
         # get id, description and unit price (at time of purchase)
         # of products from a given order_id
         try:
-            order = app_header.put_order(flask.g.session,
+            order = app_header.\
+                put_order(flask.g.session,
                           parameters[0],
                           parameters[1],
-                          parameters[2],
-                          header)
+                          parameters[2])
         except InvalidRequest as e:
             return {str(e) : None}, 404
         except CancelledOrder as e:
@@ -110,19 +115,21 @@ class OrderRequests(Resource):
         parameters = app_header.set_params('orderId')
         
         # first message in output
-        header = 'Order deleted'
+        header = 'Following order cancelled'
         
         # delete order (i.e. change status to cancelled, 
         # return all products to stock, delete elements in join table)
         try:
             # delete order
-            output = app_header.delete_order(flask.g.session,
-                                             parameters[0],
-                                             header)
+            order = app_header.\
+                delete_order(flask.g.session,
+                            parameters[0])
         except InvalidRequest as e:
             return {str(e) : None}, 404
         except CancelledOrder as e:
             return {str(e) : None}, 404
+            
+        output = app_header.organize_order(order,header)
         
         return output, 200
 

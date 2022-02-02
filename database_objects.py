@@ -37,15 +37,15 @@ class SingleOrder:
     status : str = 'Released'
 
 
-def make_into_product(q):
-    return SingleProduct(q[0], q[1], json.dumps(q[2]))
+def make_into_product(query_row):
+    return SingleProduct(query_row[0], query_row[1], json.dumps(query_row[2]))
 
-def make_into_order(q,order_id):
+def make_into_order(query,order_id):
     
     product_list = []
     total_price = 0
     
-    for row in q:
+    for row in query:
         product_list.append(asdict(make_into_product(row)))
         total_price += row[2]
         

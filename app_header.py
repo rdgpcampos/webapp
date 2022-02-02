@@ -3,11 +3,11 @@
 #import psycopg2
 from flask_restful import reqparse
 from database_objects import OrderTable, ProductTable, JoinTable,\
-insert_joint, insert_order, make_into_order
+insert_joint, insert_order, make_into_order, SingleOrder
 from error_handler import InvalidRequest, if_valid, if_available
 
 # function to read parameters
-def set_params(*args):
+def set_params(*args)->list:
     
     parser = reqparse.RequestParser()
     
@@ -27,7 +27,7 @@ def set_params(*args):
     
     if 'status' in args:
         parser.add_argument('status', required=False, default = 'Released',
-                            type=str)
+                            choices=['Released','Cancelled'], type=str)
     
     if 'addflag' in args:
         parser.add_argument('addflag', required=False, choices=['True', 'False'],
@@ -44,7 +44,7 @@ def set_params(*args):
     return list_param
 
 # organize output of get query
-def organize_order(order, header: str):
+def organize_order(order: SingleOrder, header: str)->dict:
     
     pre_output = {}
     
@@ -56,7 +56,7 @@ def organize_order(order, header: str):
     
     return output
 
-def get_order(session,order_id,header: str,check_if_valid=True):
+def get_order(session,order_id: int,check_if_valid=True)->SingleOrder:
     
     # check validity of order
     if check_if_valid:
@@ -73,7 +73,7 @@ def get_order(session,order_id,header: str,check_if_valid=True):
         
     return order
 
-def post_order(session,client_id,product_list,status,header: str):
+def post_order(session,client_id: int,product_list: list,status: str)->SingleOrder:
     
     # insert new order
     order_id = insert_order(session,client_id,status)
@@ -99,9 +99,9 @@ def post_order(session,client_id,product_list,status,header: str):
     if cnt == len(product_list):
         raise InvalidRequest("No products available")
             
-    return get_order(session,order_id,header,False)
+    return get_order(session,order_id,False)
 
-def put_order(session,order_id,product_id,addflag,header: str):
+def put_order(session,order_id: int,product_id: int,addflag: str)->SingleOrder:
     
     # check validity of order
     if_valid(session, order_id)
@@ -119,7 +119,7 @@ def put_order(session,order_id,product_id,addflag,header: str):
                     filter(ProductTable.product_id == product_id).\
                     update({ProductTable.stock: ProductTable.stock +change})
         
-    return get_order(session,order_id,header,False)
+    return get_order(session,order_id,False)
 
 def add_product_to_order(session,order_id,product_id):
     
@@ -141,10 +141,13 @@ def remove_product_from_order(session,order_id,product_id):
         
     session.delete(f)
 
-def delete_order(session,order_id,header: str):
+def delete_order(session,order_id: int)->SingleOrder:
     
     # check validity of order
     if_valid(session, order_id)
+    
+    # get order to be deleted
+    order = get_order(session,order_id,False)
     
     # add products back in stock
     q = session.query(JoinTable.product_id).filter(JoinTable.order_id == order_id)
@@ -161,7 +164,7 @@ def delete_order(session,order_id,header: str):
                     filter(OrderTable.order_id == order_id).\
                     update({OrderTable.status: 'Cancelled'})
     
-    return { header : None }
+    return order
 
 def put_product(session,product_id,unit_price,header: str):
     
